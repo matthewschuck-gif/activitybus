@@ -151,7 +151,7 @@
 
   <div id="loading">
     <div class="spinner"></div>
-    Calculating nearest stops across all 4 buses…
+    Locating address and calculating nearest stops… (~20 seconds)
   </div>
 
   <div id="result">
@@ -355,24 +355,23 @@ function buildFamilyEmail(name, bus, bestStop, formattedDate, reasonLabel, mapsL
   return greeting + body;
 }
 
-async function geocodeWithClaude(addresses) {
-  var prompt = "Return ONLY a JSON array — no markdown, no explanation.\n" +
-    "Each element: {\"address\": \"...\", \"lat\": number, \"lng\": number}\n" +
-    "Geocode these addresses as accurately as possible for Ephrata, PA area:\n" +
-    JSON.stringify(addresses);
-
-  var resp = await fetch("https://yvutgnpgnthvnonhgdux.supabase.co/functions/v1/anthropic-proxy", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
+async function geocodeAddress(address) {
+  var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(address);
+  var resp = await fetch(url, { headers: { "Accept-Language": "en", "User-Agent": "EMS-ActivityBusMatcher/1.0" } });
   var data = await resp.json();
-  var raw = data.content[0].text.trim().replace(/```json|```/g, "").trim();
-  return JSON.parse(raw);
+  if (!data || data.length === 0) throw new Error("Could not geocode: " + address);
+  return { address: address, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+}
+
+async function geocodeWithClaude(addresses) {
+  // Geocode sequentially to respect Nominatim's rate limit (1 req/sec)
+  var results = [];
+  for (var i = 0; i < addresses.length; i++) {
+    var result = await geocodeAddress(addresses[i]);
+    results.push(result);
+    if (i < addresses.length - 1) await new Promise(function(r) { setTimeout(r, 1100); });
+  }
+  return results;
 }
 
 function haversine(lat1, lng1, lat2, lng2) {
