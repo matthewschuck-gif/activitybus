@@ -151,7 +151,7 @@
 
   <div id="loading">
     <div class="spinner"></div>
-    Locating address and calculating nearest stops… (~20 seconds)
+    Locating address and calculating nearest stops…
   </div>
 
   <div id="result">
@@ -210,40 +210,40 @@ var BUSES = [
   {
     busNum: "29", label: "Activity Bus 1",
     stops: [
-      { num: 1, name: "Rothsville Rd & Henn Ave",       time: "4:38 PM", address: "Rothsville Rd & Henn Ave, Ephrata, PA 17522" },
-      { num: 2, name: "Rothsville Rd & Heritage Rd",    time: "4:40 PM", address: "Rothsville Rd & Heritage Rd, Ephrata, PA 17522" },
-      { num: 3, name: "Main Street",                    time: "4:43 PM", address: "Main St, Akron, PA 17501" },
-      { num: 4, name: "Akron Elementary",               time: "4:46 PM", address: "109 Ephrata Rd, Akron, PA 17501" },
-      { num: 5, name: "Parkview Heights & Ashley Dr",   time: "4:51 PM", address: "Parkview Heights Dr & Ashley Dr, Akron, PA 17501" }
+      { num: 1, name: "Rothsville Rd & Henn Ave",       time: "4:38 PM", lat: 40.0835, lng: -76.1623 },
+      { num: 2, name: "Rothsville Rd & Heritage Rd",    time: "4:40 PM", lat: 40.0810, lng: -76.1623 },
+      { num: 3, name: "Main Street",                    time: "4:43 PM", lat: 40.0941, lng: -76.2271 },
+      { num: 4, name: "Akron Elementary",               time: "4:46 PM", lat: 40.0935, lng: -76.2253 },
+      { num: 5, name: "Parkview Heights & Ashley Dr",   time: "4:51 PM", lat: 40.0908, lng: -76.2289 }
     ]
   },
   {
     busNum: "17", label: "Activity Bus 2",
     stops: [
-      { num: 1, name: "963 Rettew Mill Rd",             time: "4:39 PM", address: "963 Rettew Mill Rd, Ephrata, PA 17522" },
-      { num: 2, name: "W Main St @ Martins",            time: "4:47 PM", address: "W Main St & Martins, Ephrata, PA 17522" },
-      { num: 3, name: "W Main @ Sharp Shopper",         time: "4:50 PM", address: "W Main St & Sharp Shopper, Ephrata, PA 17522" },
-      { num: 4, name: "Clay Elementary",                time: "4:57 PM", address: "901 Clay School Rd, Ephrata, PA 17522" }
+      { num: 1, name: "963 Rettew Mill Rd",             time: "4:39 PM", lat: 40.1838, lng: -76.1876 },
+      { num: 2, name: "W Main St @ Martins",            time: "4:47 PM", lat: 40.1758, lng: -76.1813 },
+      { num: 3, name: "W Main @ Sharp Shopper",         time: "4:50 PM", lat: 40.1760, lng: -76.1955 },
+      { num: 4, name: "Clay Elementary",                time: "4:57 PM", lat: 40.2094, lng: -76.1757 }
     ]
   },
   {
     busNum: "39", label: "Activity Bus 3",
     stops: [
-      { num: 1, name: "E Main St & Ridge Ave",          time: "4:39 PM", address: "E Main St & Ridge Ave, Ephrata, PA 17522" },
-      { num: 2, name: "E Main St & Eastgate Village",   time: "4:43 PM", address: "E Main St & Eastgate Village, Ephrata, PA 17522" },
-      { num: 3, name: "E Mohler Church & Ridge",        time: "4:50 PM", address: "E Mohler Church Rd & Ridge Ave, Ephrata, PA 17522" },
-      { num: 4, name: "Glenwood Dr & Ridge Ave",        time: "4:52 PM", address: "Glenwood Dr & Ridge Ave, Ephrata, PA 17522" },
-      { num: 5, name: "N State St & Green Dragon",      time: "4:57 PM", address: "N State St & Green Dragon, Ephrata, PA 17522" }
+      { num: 1, name: "E Main St & Ridge Ave",          time: "4:39 PM", lat: 40.1762, lng: -76.1648 },
+      { num: 2, name: "E Main St & Eastgate Village",   time: "4:43 PM", lat: 40.1762, lng: -76.1581 },
+      { num: 3, name: "E Mohler Church & Ridge",        time: "4:50 PM", lat: 40.1681, lng: -76.1524 },
+      { num: 4, name: "Glenwood Dr & Ridge Ave",        time: "4:52 PM", lat: 40.1644, lng: -76.1524 },
+      { num: 5, name: "N State St & Green Dragon",      time: "4:57 PM", lat: 40.1974, lng: -76.1502 }
     ]
   },
   {
     busNum: "41", label: "Activity Bus 4",
     stops: [
-      { num: 1, name: "N State St & Pine St",           time: "4:39 PM", address: "N State St & Pine St, Ephrata, PA 17522" },
-      { num: 2, name: "N State St & Irene Ave",         time: "4:41 PM", address: "N State St & Irene Ave, Ephrata, PA 17522" },
-      { num: 3, name: "E Mohler Church & Brookfield",   time: "4:44 PM", address: "E Mohler Church Rd & Brookfield Rd, Ephrata, PA 17522" },
-      { num: 4, name: "E Mohler Church & Meadowview",   time: "4:48 PM", address: "E Mohler Church Rd & Meadowview Dr, Ephrata, PA 17522" },
-      { num: 5, name: "Stevens Rd & Ephrata Menn. Sch", time: "4:53 PM", address: "Stevens Rd & Ephrata Mennonite School, Ephrata, PA 17522" }
+      { num: 1, name: "N State St & Pine St",           time: "4:39 PM", lat: 40.1823, lng: -76.1767 },
+      { num: 2, name: "N State St & Irene Ave",         time: "4:41 PM", lat: 40.1835, lng: -76.1767 },
+      { num: 3, name: "E Mohler Church & Brookfield",   time: "4:44 PM", lat: 40.1659, lng: -76.1465 },
+      { num: 4, name: "E Mohler Church & Meadowview",   time: "4:48 PM", lat: 40.1640, lng: -76.1491 },
+      { num: 5, name: "Stevens Rd & Ephrata Menn. Sch", time: "4:53 PM", lat: 40.1547, lng: -76.1657 }
     ]
   }
 ];
@@ -355,23 +355,14 @@ function buildFamilyEmail(name, bus, bestStop, formattedDate, reasonLabel, mapsL
   return greeting + body;
 }
 
-async function geocodeAddress(address) {
-  var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(address);
+async function geocodeStudentAddress(address) {
+  // Only the student address needs geocoding — bus stops have hardcoded coords
+  var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" + encodeURIComponent(address);
   var resp = await fetch(url, { headers: { "Accept-Language": "en", "User-Agent": "EMS-ActivityBusMatcher/1.0" } });
+  if (!resp.ok) throw new Error("Geocoding request failed (" + resp.status + ")");
   var data = await resp.json();
-  if (!data || data.length === 0) throw new Error("Could not geocode: " + address);
-  return { address: address, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-}
-
-async function geocodeWithClaude(addresses) {
-  // Geocode sequentially to respect Nominatim's rate limit (1 req/sec)
-  var results = [];
-  for (var i = 0; i < addresses.length; i++) {
-    var result = await geocodeAddress(addresses[i]);
-    results.push(result);
-    if (i < addresses.length - 1) await new Promise(function(r) { setTimeout(r, 1100); });
-  }
-  return results;
+  if (!data || data.length === 0) throw new Error("Address not found. Try adding the ZIP code (e.g. Ephrata, PA 17522).");
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
 }
 
 function haversine(lat1, lng1, lat2, lng2) {
@@ -434,19 +425,18 @@ async function findBestBus() {
   document.getElementById("result").style.display = "none";
 
   try {
-    var allStops = [];
-    for (var i = 0; i < BUSES.length; i++) {
-      for (var j = 0; j < BUSES[i].stops.length; j++) { allStops.push(BUSES[i].stops[j].address); }
-    }
-    var geocoded = await geocodeWithClaude([addr].concat(allStops));
-    var studentGeo = geocoded[0];
-    var idx = 1;
+    // Only geocode the student address — stops use hardcoded coords
+    var studentGeo = await geocodeStudentAddress(addr);
+
     var busesWithDist = BUSES.map(function(bus) {
       return {
         busNum: bus.busNum, label: bus.label,
         stops: bus.stops.map(function(stop) {
-          var g = geocoded[idx++];
-          return { num: stop.num, name: stop.name, time: stop.time, address: stop.address, lat: g.lat, lng: g.lng, dist: haversine(studentGeo.lat, studentGeo.lng, g.lat, g.lng) };
+          return {
+            num: stop.num, name: stop.name, time: stop.time,
+            lat: stop.lat, lng: stop.lng,
+            dist: haversine(studentGeo.lat, studentGeo.lng, stop.lat, stop.lng)
+          };
         })
       };
     });
@@ -459,7 +449,7 @@ async function findBestBus() {
 
     renderResult(bestPerBus, studentGeo, name, addr, date);
   } catch(e) {
-    alert("Something went wrong. Check your connection.\n\n" + e.message);
+    alert("Could not locate address.\n\n" + e.message + "\n\nTip: Make sure the address includes a ZIP code, e.g. 957 Hammon Ave, Ephrata, PA 17522");
     console.error(e);
   } finally {
     document.getElementById("findBtn").disabled = false;
