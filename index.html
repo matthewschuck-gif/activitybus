@@ -258,50 +258,7 @@ var BUSES = [
   }
 ];
 
-var stopsReady = true;
 
-async function geocodeOneStop(stop) {
-  var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" +
-    encodeURIComponent(stop.geocodeQuery);
-  var resp = await fetch(url, { headers: { "User-Agent": "EMS-ActivityBusMatcher/1.0" } });
-  var data = await resp.json();
-  if (data && data.length > 0) {
-    stop.lat = parseFloat(data[0].lat);
-    stop.lng = parseFloat(data[0].lon);
-    return true;
-  }
-  return false;
-}
-
-async function geocodeAllStops() {
-  var btn = document.getElementById("findBtn");
-  var statusEl = document.getElementById("stopGeoStatus");
-  btn.disabled = true;
-  btn.textContent = "Loading stop locations…";
-
-  var allStops = [];
-  BUSES.forEach(function(bus) { bus.stops.forEach(function(s) { allStops.push(s); }); });
-
-  var failed = [];
-  for (var i = 0; i < allStops.length; i++) {
-    var ok = await geocodeOneStop(allStops[i]);
-    if (!ok) failed.push(allStops[i].name);
-    statusEl.textContent = "Locating stops… " + (i+1) + "/" + allStops.length;
-    if (i < allStops.length - 1) await new Promise(function(r) { setTimeout(r, 1200); });
-  }
-
-  stopsReady = true;
-  btn.disabled = false;
-  btn.textContent = "Find Best Bus Stop";
-
-  if (failed.length > 0) {
-    statusEl.textContent = "⚠️ Could not locate: " + failed.join(", ") + " — results may be incomplete.";
-    statusEl.style.color = "#b45309";
-  } else {
-    statusEl.textContent = "✓ All " + allStops.length + " stops located.";
-    statusEl.style.color = "#1a7a4a";
-  }
-}
 
 var leafletMap = null;
 var selectedReason = null;
