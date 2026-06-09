@@ -147,6 +147,7 @@
     </div>
   </div>
 
+  <div id="stopGeoStatus" style="font-size:12px;color:var(--muted);text-align:center;padding:6px 0;min-height:18px;"></div>
   <button class="btn" id="findBtn" onclick="findBestBus()">Find Best Bus Stop</button>
 
   <details style="margin-bottom:16px;">
@@ -215,66 +216,95 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// Bus stops — lat/lng populated at page load via Nominatim geocoding
+// geocodeQuery is the search string sent to Nominatim for each stop
 var BUSES = [
   {
     busNum: "29", label: "Activity Bus 1",
     stops: [
-      // Rothsville Rd runs NW from Ephrata toward Akron; Henn Ave branches off it ~3600 block
-      { num: 1, name: "Rothsville Rd & Henn Ave",       time: "4:38 PM", lat: 40.0957, lng: -76.2017 },
-      // Heritage Rd slightly further along Rothsville Rd
-      { num: 2, name: "Rothsville Rd & Heritage Rd",    time: "4:40 PM", lat: 40.0925, lng: -76.2063 },
-      // Akron Borough center - Main St
-      { num: 3, name: "Main Street",                    time: "4:43 PM", lat: 40.1034, lng: -76.2281 },
-      // Akron Elementary: 109 Ephrata Rd, Akron PA
-      { num: 4, name: "Akron Elementary",               time: "4:46 PM", lat: 40.0996, lng: -76.2239 },
-      // Parkview Heights & Ashley Dr, Akron area
-      { num: 5, name: "Parkview Heights & Ashley Dr",   time: "4:51 PM", lat: 40.0963, lng: -76.2175 }
+      { num: 1, name: "Rothsville Rd & Henn Ave",       time: "4:38 PM", lat: null, lng: null, geocodeQuery: "Rothsville Road & Henn Avenue, Ephrata, PA 17522" },
+      { num: 2, name: "Rothsville Rd & Heritage Rd",    time: "4:40 PM", lat: null, lng: null, geocodeQuery: "Rothsville Road & Heritage Road, Ephrata, PA 17522" },
+      { num: 3, name: "Main Street, Akron",             time: "4:43 PM", lat: null, lng: null, geocodeQuery: "Main Street, Akron, PA 17501" },
+      { num: 4, name: "Akron Elementary",               time: "4:46 PM", lat: null, lng: null, geocodeQuery: "125 S 11th Street, Akron, PA 17501" },
+      { num: 5, name: "Parkview Heights & Ashley Dr",   time: "4:51 PM", lat: null, lng: null, geocodeQuery: "Parkview Heights Drive & Ashley Drive, Akron, PA 17501" }
     ]
   },
   {
     busNum: "17", label: "Activity Bus 2",
     stops: [
-      // 963 Rettew Mill Rd - NE of Ephrata
-      { num: 1, name: "963 Rettew Mill Rd",             time: "4:39 PM", lat: 40.1921, lng: -76.1588 },
-      // W Main St @ Martins grocery store, west end of Main St
-      { num: 2, name: "W Main St @ Martins",            time: "4:47 PM", lat: 40.1775, lng: -76.1875 },
-      // W Main @ Sharp Shopper - further west on Main St
-      { num: 3, name: "W Main @ Sharp Shopper",         time: "4:50 PM", lat: 40.1772, lng: -76.2014 },
-      // Clay Elementary: 901 Clay School Rd
-      { num: 4, name: "Clay Elementary",                time: "4:57 PM", lat: 40.2109, lng: -76.1698 }
+      { num: 1, name: "963 Rettew Mill Rd",             time: "4:39 PM", lat: null, lng: null, geocodeQuery: "963 Rettew Mill Road, Ephrata, PA 17522" },
+      { num: 2, name: "W Main St @ Martins",            time: "4:47 PM", lat: null, lng: null, geocodeQuery: "West Main Street, Ephrata, PA 17522" },
+      { num: 3, name: "W Main @ Sharp Shopper",         time: "4:50 PM", lat: null, lng: null, geocodeQuery: "1700 West Main Street, Ephrata, PA 17522" },
+      { num: 4, name: "Clay Elementary",                time: "4:57 PM", lat: null, lng: null, geocodeQuery: "901 Clay School Road, Ephrata, PA 17522" }
     ]
   },
   {
     busNum: "39", label: "Activity Bus 3",
     stops: [
-      // E Main St & Ridge Ave - east side of Ephrata
-      { num: 1, name: "E Main St & Ridge Ave",          time: "4:39 PM", lat: 40.1773, lng: -76.1658 },
-      // E Main St & Eastgate Village - further east
-      { num: 2, name: "E Main St & Eastgate Village",   time: "4:43 PM", lat: 40.1769, lng: -76.1580 },
-      // E Mohler Church Rd & Ridge Ave - SE of Ephrata
-      { num: 3, name: "E Mohler Church & Ridge",        time: "4:50 PM", lat: 40.1596, lng: -76.1542 },
-      // Glenwood Dr & Ridge Ave
-      { num: 4, name: "Glenwood Dr & Ridge Ave",        time: "4:52 PM", lat: 40.1560, lng: -76.1527 },
-      // N State St & Green Dragon - north on State St near Green Dragon market
-      { num: 5, name: "N State St & Green Dragon",      time: "4:57 PM", lat: 40.2188, lng: -76.1756 }
+      { num: 1, name: "E Main St & Ridge Ave",          time: "4:39 PM", lat: null, lng: null, geocodeQuery: "East Main Street & Ridge Avenue, Ephrata, PA 17522" },
+      { num: 2, name: "E Main St & Eastgate Village",   time: "4:43 PM", lat: null, lng: null, geocodeQuery: "East Main Street & Eastgate Drive, Ephrata, PA 17522" },
+      { num: 3, name: "E Mohler Church & Ridge",        time: "4:50 PM", lat: null, lng: null, geocodeQuery: "East Mohler Church Road & Ridge Avenue, Ephrata, PA 17522" },
+      { num: 4, name: "Glenwood Dr & Ridge Ave",        time: "4:52 PM", lat: null, lng: null, geocodeQuery: "Glenwood Drive & Ridge Avenue, Ephrata, PA 17522" },
+      { num: 5, name: "N State St & Green Dragon",      time: "4:57 PM", lat: null, lng: null, geocodeQuery: "Green Dragon Market, 955 North State Street, Ephrata, PA 17522" }
     ]
   },
   {
     busNum: "41", label: "Activity Bus 4",
     stops: [
-      // N State St & Pine St - just north of Main St in Ephrata
-      { num: 1, name: "N State St & Pine St",           time: "4:39 PM", lat: 40.1807, lng: -76.1773 },
-      // N State St & Irene Ave - a bit further north
-      { num: 2, name: "N State St & Irene Ave",         time: "4:41 PM", lat: 40.1841, lng: -76.1773 },
-      // E Mohler Church Rd & Brookfield Rd
-      { num: 3, name: "E Mohler Church & Brookfield",   time: "4:44 PM", lat: 40.1568, lng: -76.1476 },
-      // E Mohler Church Rd & Meadowview Dr
-      { num: 4, name: "E Mohler Church & Meadowview",   time: "4:48 PM", lat: 40.1545, lng: -76.1504 },
-      // Stevens Rd & Ephrata Mennonite School
-      { num: 5, name: "Stevens Rd & Ephrata Menn. Sch", time: "4:53 PM", lat: 40.1491, lng: -76.1620 }
+      { num: 1, name: "N State St & Pine St",           time: "4:39 PM", lat: null, lng: null, geocodeQuery: "North State Street & Pine Street, Ephrata, PA 17522" },
+      { num: 2, name: "N State St & Irene Ave",         time: "4:41 PM", lat: null, lng: null, geocodeQuery: "North State Street & Irene Avenue, Ephrata, PA 17522" },
+      { num: 3, name: "E Mohler Church & Brookfield",   time: "4:44 PM", lat: null, lng: null, geocodeQuery: "East Mohler Church Road & Brookfield Road, Ephrata, PA 17522" },
+      { num: 4, name: "E Mohler Church & Meadowview",   time: "4:48 PM", lat: null, lng: null, geocodeQuery: "East Mohler Church Road & Meadowview Drive, Ephrata, PA 17522" },
+      { num: 5, name: "Stevens Rd & Ephrata Menn. Sch", time: "4:53 PM", lat: null, lng: null, geocodeQuery: "Stevens Road, Ephrata, PA 17522" }
     ]
   }
 ];
+
+// ── GEOCODE ALL STOPS ON PAGE LOAD ─────────────────────────────
+var stopsReady = false;
+
+async function geocodeOneStop(stop) {
+  var url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" +
+    encodeURIComponent(stop.geocodeQuery);
+  var resp = await fetch(url, { headers: { "User-Agent": "EMS-ActivityBusMatcher/1.0" } });
+  var data = await resp.json();
+  if (data && data.length > 0) {
+    stop.lat = parseFloat(data[0].lat);
+    stop.lng = parseFloat(data[0].lon);
+    return true;
+  }
+  return false;
+}
+
+async function geocodeAllStops() {
+  var btn = document.getElementById("findBtn");
+  var statusEl = document.getElementById("stopGeoStatus");
+  btn.disabled = true;
+  btn.textContent = "Loading stop locations…";
+
+  var allStops = [];
+  BUSES.forEach(function(bus) { bus.stops.forEach(function(s) { allStops.push(s); }); });
+
+  var failed = [];
+  for (var i = 0; i < allStops.length; i++) {
+    var ok = await geocodeOneStop(allStops[i]);
+    if (!ok) failed.push(allStops[i].name);
+    statusEl.textContent = "Locating stops… " + (i+1) + "/" + allStops.length;
+    if (i < allStops.length - 1) await new Promise(function(r) { setTimeout(r, 1200); });
+  }
+
+  stopsReady = true;
+  btn.disabled = false;
+  btn.textContent = "Find Best Bus Stop";
+
+  if (failed.length > 0) {
+    statusEl.textContent = "⚠️ Could not locate: " + failed.join(", ") + " — results may be incomplete.";
+    statusEl.style.color = "#b45309";
+  } else {
+    statusEl.textContent = "✓ All " + allStops.length + " stops located.";
+    statusEl.style.color = "#1a7a4a";
+  }
+}
 
 var leafletMap = null;
 var selectedReason = null;
@@ -444,6 +474,7 @@ async function findBestBus() {
   var addr = document.getElementById("studentAddress").value.trim();
   var date = document.getElementById("asdDate").value;
 
+  if (!stopsReady) { alert("Still loading bus stop locations, please wait a moment."); return; }
   if (!name) { alert("Please enter the student's name."); return; }
   if (!addr) { alert("Please enter the student's home address."); return; }
   if (!selectedReason) { alert("Please select a reason for the late bus."); return; }
@@ -562,6 +593,9 @@ function showToast(msg) {
 
 var today = new Date();
 document.getElementById("asdDate").value = today.toISOString().split("T")[0];
+
+// Kick off stop geocoding immediately on load
+geocodeAllStops();
 
 // ── VERIFY MAP ────────────────────────────────────────────────
 var verifyMap = null;
