@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMS Activity Bus Matcher</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #490e6f; --purple-light: #6b1fa3; --purple-dim: #2d0845;
+    --gold: #ffe100; --white: #ffffff; --off: #f7f4fb;
+    --border: #e2d9ef; --text: #1a1a2e; --muted: #6b5e82;
+    --success: #1a7a4a; --mono: 'JetBrains Mono', monospace;
+  }
+  body { font-family: 'Inter', system-ui, sans-serif; background: var(--off); color: var(--text); min-height: 100vh; padding: 0 0 60px; }
+  header { background: var(--purple); color: var(--white); padding: 20px 24px 18px; display: flex; align-items: center; gap: 14px; border-bottom: 4px solid var(--gold); }
+  .header-icon { width: 40px; height: 40px; background: var(--gold); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; }
+  header p { font-size: 12px; opacity: 0.72; margin-top: 2px; }
+  .container { max-width: 680px; margin: 0 auto; padding: 24px 16px 0; }
+  .card { background: var(--white); border-radius: 12px; border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; }
+  .card-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); margin-bottom: 12px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  label span { font-weight: 400; color: var(--muted); }
+  input[type="text"], input[type="date"], textarea, select {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: inherit; color: var(--text); background: var(--white);
+    transition: border-color 0.15s; outline: none; appearance: none;
+  }
+  input[type="text"]:focus, input[type="date"]:focus, textarea:focus, select:focus {
+    border-color: var(--purple-light); box-shadow: 0 0 0 3px rgba(107,31,163,0.1);
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after { content: "▾"; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 13px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* REASON PILLS */
+  .reason-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .reason-pill {
+    padding: 7px 14px; border-radius: 20px; border: 2px solid var(--border);
+    font-size: 13px; font-weight: 600; cursor: pointer; background: var(--white);
+    color: var(--muted); transition: all 0.15s; user-select: none;
+  }
+  .reason-pill:hover { border-color: var(--purple-light); color: var(--purple); }
+  .reason-pill.active { background: var(--purple); border-color: var(--purple); color: var(--white); }
+  .reason-pill.asd { }
+  #otherReasonWrap { margin-top: 10px; display: none; }
+
+  .btn { display: block; width: 100%; padding: 13px; background: var(--purple); color: var(--white); border: none; border-radius: 8px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: background 0.15s, transform 0.1s; margin-top: 4px; }
+  .btn:hover { background: var(--purple-light); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--purple); border: 2px solid var(--purple); font-size: 13px; padding: 9px; margin-top: 0; }
+  .btn-secondary:hover { background: var(--off); }
+  .btn-gold { background: var(--gold); color: var(--purple-dim); border: none; font-size: 13px; padding: 10px; margin-top: 0; font-weight: 700; }
+  .btn-gold:hover { background: #f0d400; }
+
+  #loading { display: none; text-align: center; padding: 24px; color: var(--muted); font-size: 14px; }
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #result { display: none; }
+  .match-banner { background: var(--purple); color: var(--white); border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px; }
+  .bus-badge { background: var(--gold); color: var(--purple-dim); font-family: var(--mono); font-weight: 700; font-size: 22px; border-radius: 8px; padding: 8px 14px; flex-shrink: 0; line-height: 1; }
+  .match-info h2 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .match-info p { font-size: 13px; opacity: 0.82; }
+  .reason-tag { display: inline-block; background: rgba(255,225,0,0.2); border: 1px solid rgba(255,225,0,0.5); color: var(--gold); border-radius: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; margin-bottom: 6px; letter-spacing: 0.05em; }
+
+  .all-buses-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bus-row { background: var(--off); border-radius: 6px; padding: 8px 10px; border: 1.5px solid var(--border); }
+  .bus-row .bnum { font-family: var(--mono); font-weight: 700; font-size: 12px; color: var(--purple); }
+  .bus-row .bstop { font-size: 11px; margin-top: 2px; }
+  .bus-row .bdist { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+  .map-section { margin-bottom: 16px; }
+  #busMap { width: 100%; height: 280px; border-radius: 10px 10px 0 0; border: 1px solid var(--border); border-bottom: none; z-index: 1; }
+  .map-footer { background: var(--white); border: 1px solid var(--border); border-radius: 0 0 10px 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .map-legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; border: 2px solid white; box-shadow: 0 0 0 1.5px currentColor; }
+  .legend-dot.home { color: #2563eb; background: #2563eb; }
+  .legend-dot.stop { color: #490e6f; background: #490e6f; }
+  .map-footer .btn-gold { white-space: nowrap; flex-shrink: 0; border-radius: 7px; padding: 8px 14px; font-size: 12px; }
+
+  .family-email-card { border: 2px solid var(--gold); }
+  textarea.email-body { min-height: 190px; font-size: 13px; line-height: 1.6; font-family: inherit; resize: vertical; }
+  textarea.family-body { min-height: 230px; }
+  .copy-row { display: flex; gap: 8px; margin-top: 10px; }
+  .copy-row .btn { margin-top: 0; flex: 1; }
+  .section-divider { display: flex; align-items: center; gap: 10px; margin: 4px 0 12px; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; }
+  .section-divider::before, .section-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; z-index: 9999; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-icon">🚌</div>
+  <div>
+    <h1>Activity Bus Matcher</h1>
+    <p>Ephrata Middle School · Late Bus Transportation</p>
+  </div>
+</header>
+
+<div class="container">
+  <div class="card">
+    <div class="card-label">Student Info</div>
+    <div style="display:grid;gap:12px;">
+      <div class="row">
+        <div>
+          <label>Student Name</label>
+          <input type="text" id="studentName" placeholder="Last, First">
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="date" id="asdDate">
+        </div>
+      </div>
+      <div>
+        <label>Student Home Address <span>(paste from SIS)</span></label>
+        <input type="text" id="studentAddress" placeholder="e.g. 123 Oak Street, Ephrata, PA 17522">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Reason for Late Bus</div>
+    <div class="reason-pills">
+      <div class="reason-pill" data-reason="asd" onclick="selectReason(this)">🔴 After-School Detention (ASD)</div>
+      <div class="reason-pill" data-reason="connect" onclick="selectReason(this)">🟢 EMS Connect</div>
+      <div class="reason-pill" data-reason="club" onclick="selectReason(this)">🔵 Club / Extracurricular</div>
+      <div class="reason-pill" data-reason="academic" onclick="selectReason(this)">📚 Academic Support</div>
+      <div class="reason-pill" data-reason="other" onclick="selectReason(this)">✏️ Other</div>
+    </div>
+    <div id="otherReasonWrap">
+      <label style="margin-top:10px;">Describe the activity <span>(used in the email)</span></label>
+      <input type="text" id="otherReasonText" placeholder="e.g. Math tutoring with Ms. Smith">
+    </div>
+    <div id="clubNameWrap" style="display:none; margin-top:10px;">
+      <label>Club or activity name <span>(used in the email)</span></label>
+      <input type="text" id="clubNameText" placeholder="e.g. Student Council, Drama Club">
+    </div>
+  </div>
+
+  <button class="btn" id="findBtn" onclick="findBestBus()">Find Best Bus Stop</button>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    Calculating nearest stops across all 4 buses…
+  </div>
+
+  <div id="result">
+    <div class="match-banner" id="matchBanner">
+      <div class="bus-badge" id="busBadge">–</div>
+      <div class="match-info">
+        <div class="reason-tag" id="reasonTag">–</div>
+        <h2 id="matchStop">–</h2>
+        <p id="matchMeta">–</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">All Stops Compared</div>
+      <div class="all-buses-grid" id="allBusesGrid"></div>
+    </div>
+
+    <div class="map-section">
+      <div id="busMap"></div>
+      <div class="map-footer">
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot home"></div> Student home</div>
+          <div class="legend-item"><div class="legend-dot stop"></div> Bus stop</div>
+        </div>
+        <a id="gmapsLink" href="#" target="_blank" rel="noopener">
+          <button class="btn btn-gold">📍 Open in Google Maps</button>
+        </a>
+      </div>
+    </div>
+
+    <div class="section-divider">Emails</div>
+
+    <div class="card">
+      <div class="card-label">Transportation Coordinator — Internal Email</div>
+      <textarea class="email-body" id="emailBody"></textarea>
+      <div class="copy-row">
+        <button class="btn btn-secondary" onclick="copyEmail('emailBody')">Copy Email</button>
+      </div>
+    </div>
+
+    <div class="card family-email-card">
+      <div class="card-label" id="familyEmailLabel">✉️ Family Confirmation Email</div>
+      <textarea class="email-body family-body" id="familyEmailBody"></textarea>
+      <div class="copy-row">
+        <button class="btn btn-secondary" onclick="copyEmail('familyEmailBody')">Copy Family Email</button>
+        <button class="btn btn-secondary" onclick="resetForm()">Start Over</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var BUSES = [
+  {
+    busNum: "29", label: "Activity Bus 1",
+    stops: [
+      { num: 1, name: "Rothsville Rd & Henn Ave",       time: "4:38 PM", address: "Rothsville Rd & Henn Ave, Ephrata, PA 17522" },
+      { num: 2, name: "Rothsville Rd & Heritage Rd",    time: "4:40 PM", address: "Rothsville Rd & Heritage Rd, Ephrata, PA 17522" },
+      { num: 3, name: "Main Street",                    time: "4:43 PM", address: "Main St, Akron, PA 17501" },
+      { num: 4, name: "Akron Elementary",               time: "4:46 PM", address: "109 Ephrata Rd, Akron, PA 17501" },
+      { num: 5, name: "Parkview Heights & Ashley Dr",   time: "4:51 PM", address: "Parkview Heights Dr & Ashley Dr, Akron, PA 17501" }
+    ]
+  },
+  {
+    busNum: "17", label: "Activity Bus 2",
+    stops: [
+      { num: 1, name: "963 Rettew Mill Rd",             time: "4:39 PM", address: "963 Rettew Mill Rd, Ephrata, PA 17522" },
+      { num: 2, name: "W Main St @ Martins",            time: "4:47 PM", address: "W Main St & Martins, Ephrata, PA 17522" },
+      { num: 3, name: "W Main @ Sharp Shopper",         time: "4:50 PM", address: "W Main St & Sharp Shopper, Ephrata, PA 17522" },
+      { num: 4, name: "Clay Elementary",                time: "4:57 PM", address: "901 Clay School Rd, Ephrata, PA 17522" }
+    ]
+  },
+  {
+    busNum: "39", label: "Activity Bus 3",
+    stops: [
+      { num: 1, name: "E Main St & Ridge Ave",          time: "4:39 PM", address: "E Main St & Ridge Ave, Ephrata, PA 17522" },
+      { num: 2, name: "E Main St & Eastgate Village",   time: "4:43 PM", address: "E Main St & Eastgate Village, Ephrata, PA 17522" },
+      { num: 3, name: "E Mohler Church & Ridge",        time: "4:50 PM", address: "E Mohler Church Rd & Ridge Ave, Ephrata, PA 17522" },
+      { num: 4, name: "Glenwood Dr & Ridge Ave",        time: "4:52 PM", address: "Glenwood Dr & Ridge Ave, Ephrata, PA 17522" },
+      { num: 5, name: "N State St & Green Dragon",      time: "4:57 PM", address: "N State St & Green Dragon, Ephrata, PA 17522" }
+    ]
+  },
+  {
+    busNum: "41", label: "Activity Bus 4",
+    stops: [
+      { num: 1, name: "N State St & Pine St",           time: "4:39 PM", address: "N State St & Pine St, Ephrata, PA 17522" },
+      { num: 2, name: "N State St & Irene Ave",         time: "4:41 PM", address: "N State St & Irene Ave, Ephrata, PA 17522" },
+      { num: 3, name: "E Mohler Church & Brookfield",   time: "4:44 PM", address: "E Mohler Church Rd & Brookfield Rd, Ephrata, PA 17522" },
+      { num: 4, name: "E Mohler Church & Meadowview",   time: "4:48 PM", address: "E Mohler Church Rd & Meadowview Dr, Ephrata, PA 17522" },
+      { num: 5, name: "Stevens Rd & Ephrata Menn. Sch", time: "4:53 PM", address: "Stevens Rd & Ephrata Mennonite School, Ephrata, PA 17522" }
+    ]
+  }
+];
+
+var leafletMap = null;
+var selectedReason = null;
+
+function selectReason(el) {
+  document.querySelectorAll(".reason-pill").forEach(function(p) { p.classList.remove("active"); });
+  el.classList.add("active");
+  selectedReason = el.getAttribute("data-reason");
+  document.getElementById("otherReasonWrap").style.display = selectedReason === "other" ? "block" : "none";
+  document.getElementById("clubNameWrap").style.display = selectedReason === "club" ? "block" : "none";
+}
+
+function getReasonLabel() {
+  if (selectedReason === "asd") return "After-School Detention (ASD)";
+  if (selectedReason === "connect") return "EMS Connect";
+  if (selectedReason === "club") {
+    var cn = document.getElementById("clubNameText").value.trim();
+    return cn ? cn : "Club / Extracurricular Activity";
+  }
+  if (selectedReason === "academic") return "Academic Support / Tutoring";
+  if (selectedReason === "other") {
+    var ot = document.getElementById("otherReasonText").value.trim();
+    return ot ? ot : "After-School Activity";
+  }
+  return "After-School Activity";
+}
+
+// Email copy — tone changes by reason
+function buildTransportEmail(name, bus, bestStop, formattedDate, reasonLabel) {
+  var isASD = selectedReason === "asd";
+  var context = isASD
+    ? "an after-school detention (ASD)"
+    : "a late-stay activity (" + reasonLabel + ")";
+
+  return "Hi,\n\n" +
+    "I need to arrange activity bus transportation for " + name + " on " + formattedDate + " for " + context + ".\n\n" +
+    "Bus: " + bus.busNum + " (" + bus.label + ")\n" +
+    "Stop: #" + bestStop.num + " — " + bestStop.name + "\n" +
+    "Pickup time: " + bestStop.time + "\n\n" +
+    "Please confirm this bus will be available that day. Let me know if there are any conflicts or if a different stop would be more appropriate.\n\n" +
+    "Thank you,\nMatt\nEphrata Middle School";
+}
+
+function buildFamilyEmail(name, bus, bestStop, formattedDate, reasonLabel, mapsLink) {
+  var reason = selectedReason;
+  var greeting = "Hello,\n\n";
+  var body = "";
+
+  if (reason === "asd") {
+    body =
+      name + " has an After-School Detention (ASD) scheduled for " + formattedDate + ". " +
+      "Your child will be riding the activity bus home that day.\n\n" +
+      "Bus Stop Details:\n" +
+      "  Bus: " + bus.busNum + " (" + bus.label + ")\n" +
+      "  Stop: " + bestStop.name + "\n" +
+      "  Estimated Arrival at Stop: " + bestStop.time + "\n\n" +
+      "Please plan to have someone available to meet your child at this stop at approximately " + bestStop.time + ".\n\n" +
+      "📍 View the stop location:\n" + mapsLink + "\n\n" +
+      "If you have questions or need to make alternate arrangements, please contact the school as soon as possible.\n\n" +
+      "Thank you,\nMatt\nEphrata Middle School\n(717) 738-0791";
+  } else if (reason === "connect") {
+    body =
+      name + " is participating in EMS Connect on " + formattedDate + " and will be riding the activity bus home.\n\n" +
+      "Bus Stop Details:\n" +
+      "  Bus: " + bus.busNum + " (" + bus.label + ")\n" +
+      "  Stop: " + bestStop.name + "\n" +
+      "  Estimated Arrival at Stop: " + bestStop.time + "\n\n" +
+      "Please plan to have someone available to meet your child at this stop around " + bestStop.time + ".\n\n" +
+      "📍 View the stop location:\n" + mapsLink + "\n\n" +
+      "Thank you for supporting your child's participation in EMS Connect!\n\n" +
+      "Matt\nEphrata Middle School\n(717) 738-0791";
+  } else if (reason === "club") {
+    body =
+      name + " will be staying after school on " + formattedDate + " for " + reasonLabel + " and will be riding the activity bus home.\n\n" +
+      "Bus Stop Details:\n" +
+      "  Bus: " + bus.busNum + " (" + bus.label + ")\n" +
+      "  Stop: " + bestStop.name + "\n" +
+      "  Estimated Arrival at Stop: " + bestStop.time + "\n\n" +
+      "Please plan to have someone available to meet your child at this stop around " + bestStop.time + ".\n\n" +
+      "📍 View the stop location:\n" + mapsLink + "\n\n" +
+      "Thank you!\n\nMatt\nEphrata Middle School\n(717) 738-0791";
+  } else if (reason === "academic") {
+    body =
+      name + " will be staying after school on " + formattedDate + " for academic support and will be riding the activity bus home.\n\n" +
+      "Bus Stop Details:\n" +
+      "  Bus: " + bus.busNum + " (" + bus.label + ")\n" +
+      "  Stop: " + bestStop.name + "\n" +
+      "  Estimated Arrival at Stop: " + bestStop.time + "\n\n" +
+      "Please plan to have someone available to meet your child at this stop around " + bestStop.time + ".\n\n" +
+      "📍 View the stop location:\n" + mapsLink + "\n\n" +
+      "Thank you for supporting your child's learning!\n\n" +
+      "Matt\nEphrata Middle School\n(717) 738-0791";
+  } else {
+    body =
+      name + " will be staying after school on " + formattedDate + " for " + reasonLabel + " and will be riding the activity bus home.\n\n" +
+      "Bus Stop Details:\n" +
+      "  Bus: " + bus.busNum + " (" + bus.label + ")\n" +
+      "  Stop: " + bestStop.name + "\n" +
+      "  Estimated Arrival at Stop: " + bestStop.time + "\n\n" +
+      "Please plan to have someone available to meet your child at this stop around " + bestStop.time + ".\n\n" +
+      "📍 View the stop location:\n" + mapsLink + "\n\n" +
+      "Please contact us if you have any questions.\n\n" +
+      "Matt\nEphrata Middle School\n(717) 738-0791";
+  }
+
+  return greeting + body;
+}
+
+async function geocodeWithClaude(addresses) {
+  var prompt = "Return ONLY a JSON array — no markdown, no explanation.\n" +
+    "Each element: {\"address\": \"...\", \"lat\": number, \"lng\": number}\n" +
+    "Geocode these addresses as accurately as possible for Ephrata, PA area:\n" +
+    JSON.stringify(addresses);
+
+  var resp = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  var data = await resp.json();
+  var raw = data.content[0].text.trim().replace(/```json|```/g, "").trim();
+  return JSON.parse(raw);
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  var R = 3958.8;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+          Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function formatDate(val) {
+  if (!val) return "the scheduled date";
+  var parts = val.split("-");
+  var y = Number(parts[0]), m = Number(parts[1]), d = Number(parts[2]);
+  var months = ["","January","February","March","April","May","June","July","August","September","October","November","December"];
+  var days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var dt = new Date(y, m-1, d);
+  return days[dt.getDay()] + ", " + months[m] + " " + d + ", " + y;
+}
+
+function buildMap(studentLat, studentLng, stopLat, stopLng, stopName, stopTime) {
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  leafletMap = L.map("busMap", { zoomControl: true }).setView([(studentLat+stopLat)/2, (studentLng+stopLng)/2], 14);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 18
+  }).addTo(leafletMap);
+
+  var homeIcon = L.divIcon({
+    html: '<div style="width:16px;height:16px;background:#2563eb;border-radius:50%;border:3px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);"></div>',
+    iconSize: [16,16], iconAnchor: [8,8], className: ""
+  });
+  var stopIcon = L.divIcon({
+    html: '<div style="width:22px;height:22px;background:#490e6f;border-radius:50%;border:3px solid #ffe100;box-shadow:0 1px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:11px;">🚌</div>',
+    iconSize: [22,22], iconAnchor: [11,11], className: ""
+  });
+
+  L.marker([studentLat, studentLng], { icon: homeIcon }).addTo(leafletMap).bindPopup("<b>Student Home</b>", { closeButton: false });
+  L.marker([stopLat, stopLng], { icon: stopIcon }).addTo(leafletMap).bindPopup("<b>" + stopName + "</b><br/>" + stopTime, { closeButton: false }).openPopup();
+  L.polyline([[studentLat, studentLng],[stopLat, stopLng]], { color: "#490e6f", weight: 2, dashArray: "6 5", opacity: 0.6 }).addTo(leafletMap);
+  leafletMap.fitBounds(L.latLngBounds([studentLat, studentLng],[stopLat, stopLng]), { padding: [40,40] });
+
+  var gmapsUrl = "https://www.google.com/maps/dir/" + encodeURIComponent(studentLat + "," + studentLng) + "/" + encodeURIComponent(stopLat + "," + stopLng);
+  document.getElementById("gmapsLink").href = gmapsUrl;
+  return gmapsUrl;
+}
+
+async function findBestBus() {
+  var name = document.getElementById("studentName").value.trim();
+  var addr = document.getElementById("studentAddress").value.trim();
+  var date = document.getElementById("asdDate").value;
+
+  if (!name) { alert("Please enter the student's name."); return; }
+  if (!addr) { alert("Please enter the student's home address."); return; }
+  if (!selectedReason) { alert("Please select a reason for the late bus."); return; }
+
+  document.getElementById("findBtn").disabled = true;
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("result").style.display = "none";
+
+  try {
+    var allStops = [];
+    for (var i = 0; i < BUSES.length; i++) {
+      for (var j = 0; j < BUSES[i].stops.length; j++) { allStops.push(BUSES[i].stops[j].address); }
+    }
+    var geocoded = await geocodeWithClaude([addr].concat(allStops));
+    var studentGeo = geocoded[0];
+    var idx = 1;
+    var busesWithDist = BUSES.map(function(bus) {
+      return {
+        busNum: bus.busNum, label: bus.label,
+        stops: bus.stops.map(function(stop) {
+          var g = geocoded[idx++];
+          return { num: stop.num, name: stop.name, time: stop.time, address: stop.address, lat: g.lat, lng: g.lng, dist: haversine(studentGeo.lat, studentGeo.lng, g.lat, g.lng) };
+        })
+      };
+    });
+
+    var bestPerBus = busesWithDist.map(function(bus) {
+      var best = bus.stops.reduce(function(a,b) { return a.dist < b.dist ? a : b; });
+      return { bus: bus, bestStop: best };
+    });
+    bestPerBus.sort(function(a,b) { return a.bestStop.dist - b.bestStop.dist; });
+
+    renderResult(bestPerBus, studentGeo, name, addr, date);
+  } catch(e) {
+    alert("Something went wrong. Check your connection.\n\n" + e.message);
+    console.error(e);
+  } finally {
+    document.getElementById("findBtn").disabled = false;
+    document.getElementById("loading").style.display = "none";
+  }
+}
+
+function renderResult(bestPerBus, studentGeo, name, addr, date) {
+  var winner = bestPerBus[0];
+  var bus = winner.bus, bestStop = winner.bestStop;
+  var reasonLabel = getReasonLabel();
+  var formattedDate = formatDate(date);
+
+  // Banner
+  document.getElementById("busBadge").textContent = "Bus " + bus.busNum;
+  document.getElementById("reasonTag").textContent = reasonLabel;
+  document.getElementById("matchStop").textContent = bestStop.name;
+  document.getElementById("matchMeta").textContent = bus.label + " · Stop #" + bestStop.num + " · " + bestStop.time + " · " + bestStop.dist.toFixed(2) + " mi from home";
+
+  // Comparison grid
+  var grid = document.getElementById("allBusesGrid");
+  grid.innerHTML = "";
+  bestPerBus.forEach(function(item, i) {
+    var b = item.bus, s = item.bestStop, isWinner = i === 0;
+    var div = document.createElement("div");
+    div.className = "bus-row";
+    div.style.border = isWinner ? "2px solid #490e6f" : "1.5px solid #e2d9ef";
+    div.style.background = isWinner ? "#f5eeff" : "";
+    div.innerHTML = "<div class='bnum'>" + (isWinner ? "✓ " : "") + "Bus " + b.busNum + "</div><div class='bstop'>" + s.name + " · " + s.time + "</div><div class='bdist'>" + s.dist.toFixed(2) + " mi · Stop #" + s.num + "</div>";
+    grid.appendChild(div);
+  });
+
+  document.getElementById("result").style.display = "block";
+
+  setTimeout(function() {
+    var mapsLink = buildMap(studentGeo.lat, studentGeo.lng, bestStop.lat, bestStop.lng, bestStop.name, bestStop.time);
+    document.getElementById("emailBody").value = buildTransportEmail(name, bus, bestStop, formattedDate, reasonLabel);
+    document.getElementById("familyEmailBody").value = buildFamilyEmail(name, bus, bestStop, formattedDate, reasonLabel, mapsLink);
+
+    var isASD = selectedReason === "asd";
+    document.getElementById("familyEmailLabel").textContent = isASD
+      ? "✉️ Family Confirmation — ASD"
+      : "✉️ Family Confirmation — " + reasonLabel;
+
+    document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 50);
+}
+
+function copyEmail(id) {
+  navigator.clipboard.writeText(document.getElementById(id).value).then(function() { showToast("Copied to clipboard ✓"); });
+}
+
+function resetForm() {
+  document.getElementById("studentName").value = "";
+  document.getElementById("studentAddress").value = "";
+  document.getElementById("clubNameText").value = "";
+  document.getElementById("otherReasonText").value = "";
+  document.querySelectorAll(".reason-pill").forEach(function(p) { p.classList.remove("active"); });
+  selectedReason = null;
+  document.getElementById("otherReasonWrap").style.display = "none";
+  document.getElementById("clubNameWrap").style.display = "none";
+  document.getElementById("result").style.display = "none";
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 2500);
+}
+
+var today = new Date();
+document.getElementById("asdDate").value = today.toISOString().split("T")[0];
+</script>
+</body>
+</html>
