@@ -149,6 +149,15 @@
 
   <button class="btn" id="findBtn" onclick="findBestBus()">Find Best Bus Stop</button>
 
+  <details style="margin-bottom:16px;">
+    <summary style="cursor:pointer;font-size:12px;color:var(--muted);padding:8px 0;font-weight:600;letter-spacing:0.04em;">🗺 Verify all bus stop locations</summary>
+    <div class="card" style="margin-top:8px;margin-bottom:0;">
+      <div class="card-label">All stops on map — click any to verify location</div>
+      <div id="verifyMap" style="width:100%;height:300px;border-radius:8px;border:1px solid var(--border);"></div>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;" id="stopLinks"></div>
+    </div>
+  </details>
+
   <div id="loading">
     <div class="spinner"></div>
     Locating address and calculating nearest stops…
@@ -210,40 +219,59 @@ var BUSES = [
   {
     busNum: "29", label: "Activity Bus 1",
     stops: [
-      { num: 1, name: "Rothsville Rd & Henn Ave",       time: "4:38 PM", lat: 40.0835, lng: -76.1623 },
-      { num: 2, name: "Rothsville Rd & Heritage Rd",    time: "4:40 PM", lat: 40.0810, lng: -76.1623 },
-      { num: 3, name: "Main Street",                    time: "4:43 PM", lat: 40.0941, lng: -76.2271 },
-      { num: 4, name: "Akron Elementary",               time: "4:46 PM", lat: 40.0935, lng: -76.2253 },
-      { num: 5, name: "Parkview Heights & Ashley Dr",   time: "4:51 PM", lat: 40.0908, lng: -76.2289 }
+      // Rothsville Rd runs NW from Ephrata toward Akron; Henn Ave branches off it ~3600 block
+      { num: 1, name: "Rothsville Rd & Henn Ave",       time: "4:38 PM", lat: 40.0957, lng: -76.2017 },
+      // Heritage Rd slightly further along Rothsville Rd
+      { num: 2, name: "Rothsville Rd & Heritage Rd",    time: "4:40 PM", lat: 40.0925, lng: -76.2063 },
+      // Akron Borough center - Main St
+      { num: 3, name: "Main Street",                    time: "4:43 PM", lat: 40.1034, lng: -76.2281 },
+      // Akron Elementary: 109 Ephrata Rd, Akron PA
+      { num: 4, name: "Akron Elementary",               time: "4:46 PM", lat: 40.0996, lng: -76.2239 },
+      // Parkview Heights & Ashley Dr, Akron area
+      { num: 5, name: "Parkview Heights & Ashley Dr",   time: "4:51 PM", lat: 40.0963, lng: -76.2175 }
     ]
   },
   {
     busNum: "17", label: "Activity Bus 2",
     stops: [
-      { num: 1, name: "963 Rettew Mill Rd",             time: "4:39 PM", lat: 40.1838, lng: -76.1876 },
-      { num: 2, name: "W Main St @ Martins",            time: "4:47 PM", lat: 40.1758, lng: -76.1813 },
-      { num: 3, name: "W Main @ Sharp Shopper",         time: "4:50 PM", lat: 40.1760, lng: -76.1955 },
-      { num: 4, name: "Clay Elementary",                time: "4:57 PM", lat: 40.2094, lng: -76.1757 }
+      // 963 Rettew Mill Rd - NE of Ephrata
+      { num: 1, name: "963 Rettew Mill Rd",             time: "4:39 PM", lat: 40.1921, lng: -76.1588 },
+      // W Main St @ Martins grocery store, west end of Main St
+      { num: 2, name: "W Main St @ Martins",            time: "4:47 PM", lat: 40.1775, lng: -76.1875 },
+      // W Main @ Sharp Shopper - further west on Main St
+      { num: 3, name: "W Main @ Sharp Shopper",         time: "4:50 PM", lat: 40.1772, lng: -76.2014 },
+      // Clay Elementary: 901 Clay School Rd
+      { num: 4, name: "Clay Elementary",                time: "4:57 PM", lat: 40.2109, lng: -76.1698 }
     ]
   },
   {
     busNum: "39", label: "Activity Bus 3",
     stops: [
-      { num: 1, name: "E Main St & Ridge Ave",          time: "4:39 PM", lat: 40.1762, lng: -76.1648 },
-      { num: 2, name: "E Main St & Eastgate Village",   time: "4:43 PM", lat: 40.1762, lng: -76.1581 },
-      { num: 3, name: "E Mohler Church & Ridge",        time: "4:50 PM", lat: 40.1681, lng: -76.1524 },
-      { num: 4, name: "Glenwood Dr & Ridge Ave",        time: "4:52 PM", lat: 40.1644, lng: -76.1524 },
-      { num: 5, name: "N State St & Green Dragon",      time: "4:57 PM", lat: 40.1974, lng: -76.1502 }
+      // E Main St & Ridge Ave - east side of Ephrata
+      { num: 1, name: "E Main St & Ridge Ave",          time: "4:39 PM", lat: 40.1773, lng: -76.1658 },
+      // E Main St & Eastgate Village - further east
+      { num: 2, name: "E Main St & Eastgate Village",   time: "4:43 PM", lat: 40.1769, lng: -76.1580 },
+      // E Mohler Church Rd & Ridge Ave - SE of Ephrata
+      { num: 3, name: "E Mohler Church & Ridge",        time: "4:50 PM", lat: 40.1596, lng: -76.1542 },
+      // Glenwood Dr & Ridge Ave
+      { num: 4, name: "Glenwood Dr & Ridge Ave",        time: "4:52 PM", lat: 40.1560, lng: -76.1527 },
+      // N State St & Green Dragon - north on State St near Green Dragon market
+      { num: 5, name: "N State St & Green Dragon",      time: "4:57 PM", lat: 40.2188, lng: -76.1756 }
     ]
   },
   {
     busNum: "41", label: "Activity Bus 4",
     stops: [
-      { num: 1, name: "N State St & Pine St",           time: "4:39 PM", lat: 40.1823, lng: -76.1767 },
-      { num: 2, name: "N State St & Irene Ave",         time: "4:41 PM", lat: 40.1835, lng: -76.1767 },
-      { num: 3, name: "E Mohler Church & Brookfield",   time: "4:44 PM", lat: 40.1659, lng: -76.1465 },
-      { num: 4, name: "E Mohler Church & Meadowview",   time: "4:48 PM", lat: 40.1640, lng: -76.1491 },
-      { num: 5, name: "Stevens Rd & Ephrata Menn. Sch", time: "4:53 PM", lat: 40.1547, lng: -76.1657 }
+      // N State St & Pine St - just north of Main St in Ephrata
+      { num: 1, name: "N State St & Pine St",           time: "4:39 PM", lat: 40.1807, lng: -76.1773 },
+      // N State St & Irene Ave - a bit further north
+      { num: 2, name: "N State St & Irene Ave",         time: "4:41 PM", lat: 40.1841, lng: -76.1773 },
+      // E Mohler Church Rd & Brookfield Rd
+      { num: 3, name: "E Mohler Church & Brookfield",   time: "4:44 PM", lat: 40.1568, lng: -76.1476 },
+      // E Mohler Church Rd & Meadowview Dr
+      { num: 4, name: "E Mohler Church & Meadowview",   time: "4:48 PM", lat: 40.1545, lng: -76.1504 },
+      // Stevens Rd & Ephrata Mennonite School
+      { num: 5, name: "Stevens Rd & Ephrata Menn. Sch", time: "4:53 PM", lat: 40.1491, lng: -76.1620 }
     ]
   }
 ];
@@ -428,26 +456,33 @@ async function findBestBus() {
     // Only geocode the student address — stops use hardcoded coords
     var studentGeo = await geocodeStudentAddress(addr);
 
-    var busesWithDist = BUSES.map(function(bus) {
-      return {
-        busNum: bus.busNum, label: bus.label,
-        stops: bus.stops.map(function(stop) {
-          return {
+    // Build a flat list of ALL 19 stops with distances, each tagged with its bus
+    var allStopsRanked = [];
+    BUSES.forEach(function(bus) {
+      bus.stops.forEach(function(stop) {
+        allStopsRanked.push({
+          bus: { busNum: bus.busNum, label: bus.label },
+          stop: {
             num: stop.num, name: stop.name, time: stop.time,
             lat: stop.lat, lng: stop.lng,
             dist: haversine(studentGeo.lat, studentGeo.lng, stop.lat, stop.lng)
-          };
-        })
-      };
+          }
+        });
+      });
     });
 
-    var bestPerBus = busesWithDist.map(function(bus) {
-      var best = bus.stops.reduce(function(a,b) { return a.dist < b.dist ? a : b; });
-      return { bus: bus, bestStop: best };
+    // Sort ALL stops by distance — closest first
+    allStopsRanked.sort(function(a, b) { return a.stop.dist - b.stop.dist; });
+
+    // Also build bestPerBus for the comparison grid (best stop per bus)
+    var bestPerBus = BUSES.map(function(bus) {
+      var busStops = allStopsRanked.filter(function(s) { return s.bus.busNum === bus.busNum; });
+      busStops.sort(function(a,b) { return a.stop.dist - b.stop.dist; });
+      return { bus: { busNum: bus.busNum, label: bus.label }, bestStop: busStops[0].stop };
     });
     bestPerBus.sort(function(a,b) { return a.bestStop.dist - b.bestStop.dist; });
 
-    renderResult(bestPerBus, studentGeo, name, addr, date);
+    renderResult(allStopsRanked, bestPerBus, studentGeo, name, addr, date);
   } catch(e) {
     alert("Could not locate address.\n\n" + e.message + "\n\nTip: Make sure the address includes a ZIP code, e.g. 957 Hammon Ave, Ephrata, PA 17522");
     console.error(e);
@@ -457,9 +492,10 @@ async function findBestBus() {
   }
 }
 
-function renderResult(bestPerBus, studentGeo, name, addr, date) {
-  var winner = bestPerBus[0];
-  var bus = winner.bus, bestStop = winner.bestStop;
+function renderResult(allStopsRanked, bestPerBus, studentGeo, name, addr, date) {
+  // Winner is the single closest stop across ALL 19
+  var winner = allStopsRanked[0];
+  var bus = winner.bus, bestStop = winner.stop;
   var reasonLabel = getReasonLabel();
   var formattedDate = formatDate(date);
 
@@ -469,11 +505,12 @@ function renderResult(bestPerBus, studentGeo, name, addr, date) {
   document.getElementById("matchStop").textContent = bestStop.name;
   document.getElementById("matchMeta").textContent = bus.label + " · Stop #" + bestStop.num + " · " + bestStop.time + " · " + bestStop.dist.toFixed(2) + " mi from home";
 
-  // Comparison grid
+  // Comparison grid — highlight whichever bus has the overall winning stop
   var grid = document.getElementById("allBusesGrid");
   grid.innerHTML = "";
-  bestPerBus.forEach(function(item, i) {
-    var b = item.bus, s = item.bestStop, isWinner = i === 0;
+  bestPerBus.forEach(function(item) {
+    var b = item.bus, s = item.bestStop;
+    var isWinner = (b.busNum === bus.busNum && s.num === bestStop.num);
     var div = document.createElement("div");
     div.className = "bus-row";
     div.style.border = isWinner ? "2px solid #490e6f" : "1.5px solid #e2d9ef";
@@ -525,6 +562,40 @@ function showToast(msg) {
 
 var today = new Date();
 document.getElementById("asdDate").value = today.toISOString().split("T")[0];
+
+// ── VERIFY MAP ────────────────────────────────────────────────
+var verifyMap = null;
+document.querySelector('details').addEventListener('toggle', function(e) {
+  if (!e.target.open || verifyMap) return;
+  verifyMap = L.map("verifyMap").setView([40.178, -76.177], 12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: '© OpenStreetMap', maxZoom: 18
+  }).addTo(verifyMap);
+
+  var colors = { "29": "#e63946", "17": "#2a9d8f", "39": "#e9c46a", "41": "#490e6f" };
+  var links = document.getElementById("stopLinks");
+
+  BUSES.forEach(function(bus) {
+    bus.stops.forEach(function(stop) {
+      var color = colors[bus.busNum] || "#490e6f";
+      var icon = L.divIcon({
+        html: '<div style="background:' + color + ';color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.4);">' + stop.num + '</div>',
+        iconSize: [22,22], iconAnchor: [11,11], className: ""
+      });
+      L.marker([stop.lat, stop.lng], { icon: icon })
+        .addTo(verifyMap)
+        .bindPopup("<b>Bus " + bus.busNum + " Stop #" + stop.num + "</b><br/>" + stop.name + "<br/>" + stop.time + "<br/><small>" + stop.lat + ", " + stop.lng + "</small>");
+
+      // Google Maps verify link
+      var a = document.createElement("a");
+      a.href = "https://www.google.com/maps?q=" + stop.lat + "," + stop.lng;
+      a.target = "_blank";
+      a.style.cssText = "font-size:11px;padding:4px 8px;border-radius:4px;border:1px solid #e2d9ef;background:white;color:#490e6f;text-decoration:none;white-space:nowrap;";
+      a.textContent = "B" + bus.busNum + " #" + stop.num + ": " + stop.name.substring(0,18) + "…";
+      links.appendChild(a);
+    });
+  });
+});
 </script>
 </body>
 </html>
